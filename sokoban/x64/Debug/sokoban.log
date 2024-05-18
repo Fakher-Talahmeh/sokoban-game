@@ -1,2 +1,3 @@
 ﻿  sokoban.cpp
-  sokoban.vcxproj -> C:\Users\fafan\source\repos\sokoban\x64\Debug\sokoban.exe
+C:\Users\Paris\Documents\sokoban-game\sokoban\sokoban.cpp(99,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  sokoban.vcxproj -> C:\Users\Paris\Documents\sokoban-game\x64\Debug\sokoban.exe

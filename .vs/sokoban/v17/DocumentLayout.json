@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\fafan\\source\\repos\\sokoban\\",
+  "WorkspaceRootPath": "C:\\Users\\Paris\\Documents\\sokoban-game\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{58E7D132-F11E-446E-98FC-D57094B58BE8}|sokoban\\sokoban.vcxproj|C:\\Users\\fafan\\source\\repos\\sokoban\\sokoban\\sokoban.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{58E7D132-F11E-446E-98FC-D57094B58BE8}|sokoban\\sokoban.vcxproj|C:\\Users\\Paris\\Documents\\sokoban-game\\sokoban\\sokoban.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{58E7D132-F11E-446E-98FC-D57094B58BE8}|sokoban\\sokoban.vcxproj|solutionrelative:sokoban\\sokoban.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -20,11 +20,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "sokoban.cpp",
-              "DocumentMoniker": "C:\\Users\\fafan\\source\\repos\\sokoban\\sokoban\\sokoban.cpp",
+              "DocumentMoniker": "C:\\Users\\Paris\\Documents\\sokoban-game\\sokoban\\sokoban.cpp",
               "RelativeDocumentMoniker": "sokoban\\sokoban.cpp",
-              "ToolTip": "C:\\Users\\fafan\\source\\repos\\sokoban\\sokoban\\sokoban.cpp",
+              "ToolTip": "C:\\Users\\Paris\\Documents\\sokoban-game\\sokoban\\sokoban.cpp",
               "RelativeToolTip": "sokoban\\sokoban.cpp",
-              "ViewState": "AQIAAEwAAAAAAAAAAAAAAIUAAAACAAAA",
+              "ViewState": "AQIAAE4BAAAAAAAAAAAAwG0BAAABAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-03-07T15:31:35.723Z",
               "EditorCaption": ""
