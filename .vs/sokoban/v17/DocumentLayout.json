@@ -14,8 +14,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -24,7 +28,7 @@
               "RelativeDocumentMoniker": "sokoban\\sokoban.cpp",
               "ToolTip": "C:\\Users\\Paris\\Documents\\sokoban-game\\sokoban\\sokoban.cpp",
               "RelativeToolTip": "sokoban\\sokoban.cpp",
-              "ViewState": "AQIAAE4BAAAAAAAAAAAAwG0BAAABAAAA",
+              "ViewState": "AQIAAGAAAAAAAAAAAAAAAMUAAABVAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-03-07T15:31:35.723Z",
               "EditorCaption": ""

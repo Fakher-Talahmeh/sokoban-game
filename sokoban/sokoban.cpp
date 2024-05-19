@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <unordered_map>
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
@@ -7,77 +9,84 @@ using namespace std;
 
 const int ROWS = 7;
 const int COLS = 7;
-const int ACTIONS = 4;
-const int EPOCHS = 1000;
-const double ALPHA = 0.1;
-const double GAMMA = 0.9;
+const int NUM_ACTIONS = 4;
+const int NUM_EPISODES = 500;
+const double ALPHA = 0.8;
+const double EPSILON = 0.1;
 const double PENALTY = -10.0;
 const double REWARD = 10.0;
-const int MAX_PATH_LENGTH = 100;
-struct Position {
-    int x, y;
+enum Actions { UP, DOWN, LEFT, RIGHT };
+
+struct State {
+    vector<vector<char>> board;
+    int playerRow;
+    int playerCol;
+    bool operator==(const State& other) const {
+        return playerRow == other.playerRow && playerCol == other.playerCol && board == other.board;
+    }
+    bool operator<(const State& other) const {
+        if (playerRow != other.playerRow) return playerRow < other.playerRow;
+        if (playerCol != other.playerCol) return playerCol < other.playerCol;
+        return board < other.board;
+    }
 };
 
-char board[ROWS][COLS];
-double Q[ROWS][COLS][ACTIONS];
-Position solutionPath[MAX_PATH_LENGTH];
-void init() {
-    char tempBoard[ROWS][COLS] = {
+namespace std {
+    template <>
+    struct hash<State> {
+        size_t operator()(const State& state) const {
+            size_t rowHash = hash<int>()(state.playerRow);
+            size_t colHash = hash<int>()(state.playerCol);
+            size_t boardHash = 0;
+            for (const auto& row : state.board) {
+                for (char cell : row) {
+                    boardHash ^= hash<char>()(cell) + 0x9e3779b9 + (boardHash << 6) + (boardHash >> 2);
+                }
+            }
+            return rowHash ^ colHash ^ boardHash;
+        }
+    };
+}
+unordered_map<State, vector<double>> Q;
+vector<State> stateVec;
+
+void printState(const State& state) {
+    for (const auto& row : state.board) {
+        for (char cell : row) {
+            cout << cell << " ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+State initializeState() {
+    State initialState;
+    initialState.board = {
         {'1', '1', '1', '1', '1', '1', '1'},
         {'1', '0', '0', '0', '0', '0', '1'},
         {'1', '0', '2', '0', '0', '0', '1'},
-        {'1', '0', '0', '0', '0', '0', '1'},
-        {'1', '3', '0', '0', '2', '0', '1'},
-        {'1', '0', '0', '0', '0', '3', '1'},
-        {'1', '1', '1', '1', '1', '1', '1'},
+        {'1', '1', '1', '0', '1', '0', '1'},
+        {'1', '3', '2', '0', '1', '0', '1'},
+        {'1', '0', '0', '3', '1', '0', '1'},
+        {'1', '1', '1', '1', '1', '1', '1'}
     };
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            board[i][j] = tempBoard[i][j];
-            for (int k = 0; k < ACTIONS; k++) {
-                Q[i][j][k] = 0.0;
-            }
-        }
-    }
+    return initialState;
 }
 
-bool isGoal(int x, int y) {
-    return board[x][y] == '3';
+bool isGoalState(const State& state) {
+    for (const auto& row : state.board) {
+        if (find(row.begin(), row.end(), '2') != row.end()) return false;
+    }
+    return true;
 }
 
-int generateChildren(const Position& S, Position children[4]) {
-    int count = 0;
-    Position newPos;
-    // Try moving up
-    newPos = { S.x - 1, S.y };
-    if (newPos.x >= 0 && board[newPos.x][newPos.y] != '1' && board[newPos.x][newPos.y] != '2') {
-        children[count++] = newPos;
-    }
-    // Try moving down
-    newPos = { S.x + 1, S.y };
-    if (newPos.x < ROWS && board[newPos.x][newPos.y] != '1' && board[newPos.x][newPos.y] != '2') {
-        children[count++] = newPos;
-    }
-    // Try moving left
-    newPos = { S.x, S.y - 1 };
-    if (newPos.y >= 0 && board[newPos.x][newPos.y] != '1' && board[newPos.x][newPos.y] != '2') {
-        children[count++] = newPos;
-    }
-    // Try moving right
-    newPos = { S.x, S.y + 1 };
-    if (newPos.y < COLS && board[newPos.x][newPos.y] != '1' && board[newPos.x][newPos.y] != '2') {
-        children[count++] = newPos;
-    }
-    return count;
-}
-
-bool isDeadlock() {
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            if (board[i][j] == '2' && !isGoal(i, j)) {
-                bool isBoxHorizontally = (board[i][j - 1] == '1' || board[i][j + 1] == '1');
-                bool isBoxVertically = (board[i - 1][j] == '1' || board[i + 1][j] == '1');
-                if (isBoxHorizontally && isBoxVertically) {
+bool isDeadlockState(const State& state) {
+    for (int i = 0; i < ROWS; ++i) {
+        for (int j = 0; j < COLS; ++j) {
+            if (state.board[i][j] == '2') {
+                if ((state.board[i - 1][j] == '1' || state.board[i + 1][j] == '1') &&
+                    (state.board[i][j - 1] == '1' || state.board[i][j + 1] == '1')) {
                     return true;
                 }
             }
@@ -86,281 +95,116 @@ bool isDeadlock() {
     return false;
 }
 
-void updateQValue(Position state, int action, double reward, Position nextState) {
-    double oldQ = Q[state.x][state.y][action];
-    double maxQ = 0.0;
-    for (int i = 0; i < ACTIONS; i++) {
-        maxQ = max(maxQ, Q[nextState.x][nextState.y][i]);
+Actions chooseAction(int stateIndex) {
+    if (Q[stateVec[stateIndex]].empty()) {
+        Q[stateVec[stateIndex]] = vector<double>(NUM_ACTIONS, 0.0);
     }
-    Q[state.x][state.y][action] = oldQ + ALPHA * (reward + GAMMA * maxQ - oldQ);
+
+    if ((double)rand() / RAND_MAX < EPSILON) {
+        return static_cast<Actions>(rand() % NUM_ACTIONS);
+    }
+
+    return static_cast<Actions>(distance(Q[stateVec[stateIndex]].begin(),
+        max_element(Q[stateVec[stateIndex]].begin(), Q[stateVec[stateIndex]].end())));
 }
 
-void qLearning(Position start) {
-    srand(time(0));
-    for (int epoch = 0; epoch < EPOCHS; epoch++) {
-        Position current = start;
-        while (!isGoal(current.x, current.y) && !isDeadlock()) {
-            Position children[4];
-            int numChildren = generateChildren(current, children);
-            if (numChildren == 0) break;
-
-            int action = rand() % numChildren;
-            Position nextState = children[action];
-            double reward = isGoal(nextState.x, nextState.y) ? REWARD : (isDeadlock() ? PENALTY : -1);
-            updateQValue(current, action, reward, nextState);
-
-            if (isGoal(nextState.x, nextState.y) || isDeadlock()) break;
-            current = nextState;
-        }
+void updateQValue(int stateIndex, Actions action, int nextStateIndex, double reward) {
+    if (Q[stateVec[nextStateIndex]].empty()) {
+        Q[stateVec[nextStateIndex]] = vector<double>(NUM_ACTIONS, 0.0);
     }
+    double maxNextQValue = *max_element(Q[stateVec[nextStateIndex]].begin(), Q[stateVec[nextStateIndex]].end());
+    Q[stateVec[stateIndex]][action] = reward + ALPHA * maxNextQValue;
 }
 
-int solve(Position start, Position solutionPath[]) {
-    int pathLength = 0;
-    Position current = start;
-    solutionPath[pathLength++] = current;
-    while (!isGoal(current.x, current.y) && !isDeadlock() && pathLength < MAX_PATH_LENGTH) {
-        Position children[4];
-        int numChildren = generateChildren(current, children);
-        if (numChildren == 0) break;
-        int bestAction = 0;
-        double bestQ = Q[current.x][current.y][0];
-        for (int i = 1; i < numChildren; i++) {
-            if (Q[current.x][current.y][i] > bestQ) {
-                bestQ = Q[current.x][current.y][i];
-                bestAction = i;
+State getNextState(const State& state, Actions action) {
+    State nextState = state;
+    int dRow[] = { -1, 1, 0, 0 };
+    int dCol[] = { 0, 0, -1, 1 };
+    int newRow = state.playerRow + dRow[action];
+    int newCol = state.playerCol + dCol[action];
+
+    if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS && state.board[newRow][newCol] != '1') {
+        if (state.board[newRow][newCol] == '2' || state.board[newRow][newCol] == '4') {
+            int boxRow = newRow + dRow[action];
+            int boxCol = newCol + dCol[action];
+            if (boxRow >= 0 && boxRow < ROWS && boxCol >= 0 && boxCol < COLS && state.board[boxRow][boxCol] != '1' && state.board[boxRow][boxCol] != '2' && state.board[boxRow][boxCol] != '4') {
+                nextState.board[newRow][newCol] = '5';
+                nextState.board[boxRow][boxCol] = (state.board[boxRow][boxCol] == '3') ? '4' : '2';
             }
-        }
-        Position nextState = children[bestAction];
-        solutionPath[pathLength++] = nextState;
-        if (isGoal(nextState.x, nextState.y) || isDeadlock()) break;
-        current = nextState;
-    }
-
-    return pathLength;
-}
-
-void printBoard() {
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            cout << board[i][j] << ' ';
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void printBoardWithBox(Position box, Position player) {
-    char tempBoard[ROWS][COLS];
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            tempBoard[i][j] = board[i][j];
-        }
-    }
-    tempBoard[box.x][box.y] = '2';
-    tempBoard[player.x][player.y] = '5';
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            cout << tempBoard[i][j] << ' ';
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void findPositions(char target, Position positions[], int& count) {
-    count = 0;
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
-            if (board[i][j] == target) {
-                positions[count++] = { i, j };
+            else {
+                return state;
             }
-        }
-    }
-}
-bool moveBox(Position& box, Position& player, Position nextPos) {
-    if (board[nextPos.x][nextPos.y] == '1') {
-        return false;
-    }
-    if (board[nextPos.x][nextPos.y] == '0' || board[nextPos.x][nextPos.y] == '3') {
-        board[box.x][box.y] = '0';
-        board[player.x][player.y] = '5';
-        if (board[nextPos.x][nextPos.y] == '3') {
-            board[nextPos.x][nextPos.y] = '4';
         }
         else {
-            board[nextPos.x][nextPos.y] = '2';
+            nextState.board[newRow][newCol] = '5';
         }
-        box = nextPos;
-        return true;
+        nextState.board[state.playerRow][state.playerCol] = (state.board[state.playerRow][state.playerCol] == '4') ? '3' : '0';
+        nextState.playerRow = newRow;
+        nextState.playerCol = newCol;
     }
-    if (board[nextPos.x][nextPos.y] == '5') {
-        Position playerNextPos = { 2 * nextPos.x - player.x, 2 * nextPos.y - player.y };
-        if (board[playerNextPos.x][playerNextPos.y] == '0' || board[playerNextPos.x][playerNextPos.y] == '3') {
-            // Move the box
-            board[box.x][box.y] = '0';
-            board[nextPos.x][nextPos.y] = '2';
-            box = nextPos;
-            // Move the player
-            board[player.x][player.y] = '0';
-            board[playerNextPos.x][playerNextPos.y] = '5';
-            player = playerNextPos;
-            return true;
-        }
-    }
-    return false;
+    return nextState;
 }
-int main() {
-    init();
-    Position boxes[ROWS * COLS];
-    Position goals[ROWS * COLS];
-    Position player;
-    cout << "Enter Any Row: ";
-    cin >> player.x;
-    cout << "Enter Any Column: ";
-    cin >> player.y;
-    board[player.x][player.y] = '5';
-    printBoard();
-    int playerCount = 1;
-    int boxCount, goalCount;
-    findPositions('2', boxes, boxCount);
-    findPositions('3', goals, goalCount);
-    findPositions('5', &player, playerCount);
-    cout << "Found " << boxCount << " boxes and " << goalCount << " goals." << endl;
-    cout << "Player starts at (" << player.x << "," << player.y << ")." << endl;
-    for (int i = 0; i < boxCount; i++) {
-        Position box = boxes[i];
-        qLearning(box);
-        int pathLength = solve(box, solutionPath);
-        cout << "Solution path for box at (" << box.x << "," << box.y << "):" << endl;
-        for (int j = 1; j < pathLength; j++) {
-            if (box.y != player.y) {
-                if (solutionPath[j].y == box.y) {
-                    if (box.y > player.y) {
-                        for (int k = box.y - player.y; k > 0; k--) {
-                            board[player.x][player.y] = '0';
-                            if (player.y + 1 != box.y || player.x != box.x) {
-                                player.y += 1;
-                            }
-                            else {
-                                if (solutionPath[j].x > player.x) {
-                                    player.x -= 1;
-                                }
-                                else {
-                                    player.x += 1;
-                                }
-                                k++;
-                            }
-                            board[player.x][player.y] = '5';
-                            printBoard();
-                        }
-                    }
-                    else {
-                        for (int k = player.y - box.y; k > 0; k--) {
-                            board[player.x][player.y] = '0';
-                            if (player.y - 1 != box.y || player.x != box.x) {
-                                player.y -= 1;
-                            }
-                            else {
-                                if (solutionPath[j].x > player.x) {
-                                    player.x -= 1;
-                                }
-                                else {
-                                    player.x += 1;
-                                }
-                                k++;
-                            }
-                            board[player.x][player.y] = '5';
-                            printBoard();
-                        }
-                    }
-                }
-            }
-            if (box.x != player.x) {
-                if (solutionPath[j].x == box.x) {
-                    if (box.x > player.x) {
-                        for (int k = box.x - player.x; k > 0; k--) {
-                            board[player.x][player.y] = '0';
-                            if (player.y != box.y || player.x + 1 != box.x) {
-                                player.x += 1;
-                            }
-                            else {
-                                if (solutionPath[j].y > player.y) {
-                                    player.y -= 1;
-                                }
-                                else {
-                                    player.y += 1;
-                                }
-                                k++;
-                            }
-                            board[player.x][player.y] = '5';
 
-                            printBoard();
-                        }
-                    }
-                    else {
-                        for (int k = player.x - box.x; k > 0; k--) {
-                            board[player.x][player.y] = '0';
-                            if (player.y != box.y || player.x - 1 != box.x) {
-                                player.x -= 1;
-                            }
-                            else {
-                                if (solutionPath[j].y > player.y) {
-                                    player.y -= 1;
-                                }
-                                else {
-                                    player.y += 1;
-                                }
-                                k++;
-                            }
-                            board[player.x][player.y] = '5';
-                            printBoard();
-                        }
-                    }
-                }
+void Qlearning(State initialState) {
+    stateVec.push_back(initialState);
+    for (int episode = 0; episode < NUM_EPISODES; ++episode) {
+        State currentState = initialState;
+        int stateIndex = 0;
+        while (!isGoalState(currentState) && !isDeadlockState(currentState)) {
+            Actions action = chooseAction(stateIndex);
+            State nextState = getNextState(currentState, action);
+            int nextStateIndex = find(stateVec.begin(), stateVec.end(), nextState) - stateVec.begin();
+            if (nextStateIndex == stateVec.size()) {
+                stateVec.push_back(nextState);
             }
-            if (player.y == box.y && player.y == solutionPath[j].y) {
-                if (box.x > player.x) {
-                    for (int k = box.x - player.x; k > 1; k--) {
-                        board[player.x][player.y] = '0';
-                        player.x++;
-                        board[player.x][player.y] = '5';
-                        printBoard();
-                    }
-                }
-                else {
-                    for (int k = player.x - box.x; k > 1; k--) {
-                        board[player.x][player.y] = '0';
-                        player.x--;
-                        board[player.x][player.y] = '5';
-                        printBoard();
-                    }
-                }
-            }
-            if (player.x == box.x && player.x == solutionPath[j].x) {
-                if (box.y > player.y) {
-                    for (int k = box.y - player.y; k > 1; k--) {
-                        board[player.x][player.y] = '0';
-                        player.y++;
-                        board[player.x][player.y] = '5';
-                        printBoard();
-                    }
-                }
-                else {
-                    for (int k = player.y - box.y; k > 1; k--) {
-                        board[player.x][player.y] = '0';
-                        player.y--;
-                        board[player.x][player.y] = '5';
-                        printBoard();
-                    }
-                }
-            }
-            board[player.x][player.y] = '0';
-            player = box;
-            if (moveBox(box, player, solutionPath[j])) {
-                printBoard();
-            }
+            double reward = isGoalState(nextState) ? REWARD : (isDeadlockState(nextState) ? PENALTY : -1.0);
+            updateQValue(stateIndex, action, nextStateIndex, reward);
+            stateIndex = nextStateIndex;
+            currentState = nextState;
         }
     }
+}
+
+void executePolicy(State initialState) {
+    stateVec.push_back(initialState);
+    int stateIndex = 0;
+    while (!isGoalState(stateVec[stateIndex]) && !isDeadlockState(stateVec[stateIndex])) {
+        printState(stateVec[stateIndex]);
+        Actions action = chooseAction(stateIndex);
+        State nextState = getNextState(stateVec[stateIndex], action);
+        stateIndex = find(stateVec.begin(), stateVec.end(), nextState) - stateVec.begin();
+        if (stateIndex == stateVec.size()) {
+            stateVec.push_back(nextState);
+        }
+    }
+    printState(stateVec[stateIndex]);
+    if (isGoalState(stateVec[stateIndex])) {
+        cout << "Congratulations! You have reached the goal state." << endl;
+    }
+    else {
+        cout << "DEADLOCK!" << endl;
+    }
+}
+
+int main() {
+    srand(static_cast<unsigned int>(time(0)));
+    State initialState = initializeState();
+    int playerRow, playerCol;
+    cout << "Enter the row: ";
+    cin >> playerRow ;
+    cout << "Enter the column: ";
+    cin >> playerCol;
+    while (playerRow < 0 || playerRow >= ROWS || playerCol < 0 || playerCol >= COLS || initialState.board[playerRow][playerCol] == '1' || initialState.board[playerRow][playerCol] == '2') {
+        cout << "Invalid position. Please enter a valid position (row and column): ";
+        cin >> playerRow >> playerCol;
+    }
+    initialState.playerRow = playerRow;
+    initialState.playerCol = playerCol;
+    initialState.board[playerRow][playerCol] = '5';
+    cout << "Training..." << endl;
+    Qlearning(initialState);
+    cout << "Training completed." << endl;
+    cout << "Executing policy..." << endl;
+    executePolicy(initialState);
     return 0;
 }
