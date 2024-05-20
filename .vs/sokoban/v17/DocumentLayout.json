@@ -5,6 +5,9 @@
     {
       "AbsoluteMoniker": "D:0:0:{58E7D132-F11E-446E-98FC-D57094B58BE8}|sokoban\\sokoban.vcxproj|C:\\Users\\Paris\\Documents\\sokoban-game\\sokoban\\sokoban.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{58E7D132-F11E-446E-98FC-D57094B58BE8}|sokoban\\sokoban.vcxproj|solutionrelative:sokoban\\sokoban.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{58E7D132-F11E-446E-98FC-D57094B58BE8}|sokoban\\sokoban.vcxproj|C:\\PROGRAM FILES\\MICROSOFT VISUAL STUDIO\\2022\\COMMUNITY\\VC\\TOOLS\\MSVC\\14.39.33519\\INCLUDE\\UNORDERED_MAP||{3B902123-F8A7-4915-9F01-361F908088D0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,11 +17,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "unordered_map",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\unordered_map",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\unordered_map",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\unordered_map",
+              "RelativeToolTip": "..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\unordered_map",
+              "ViewState": "AQIAAB8AAAAAAAAAAAAhwDAAAABiAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-05-20T07:48:14.532Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -28,7 +44,7 @@
               "RelativeDocumentMoniker": "sokoban\\sokoban.cpp",
               "ToolTip": "C:\\Users\\Paris\\Documents\\sokoban-game\\sokoban\\sokoban.cpp",
               "RelativeToolTip": "sokoban\\sokoban.cpp",
-              "ViewState": "AQIAAGAAAAAAAAAAAAAAAMUAAABVAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAYAAAATAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-03-07T15:31:35.723Z",
               "EditorCaption": ""

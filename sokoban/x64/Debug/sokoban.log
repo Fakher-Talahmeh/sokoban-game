@@ -1,4 +1,5 @@
 ﻿  sokoban.cpp
-C:\Users\Paris\Documents\sokoban-game\sokoban\sokoban.cpp(156,32): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
-C:\Users\Paris\Documents\sokoban-game\sokoban\sokoban.cpp(175,72): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Paris\Documents\sokoban-game\sokoban\sokoban.cpp(81,20): warning C4244: 'return': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Paris\Documents\sokoban-game\sokoban\sokoban.cpp(126,32): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Paris\Documents\sokoban-game\sokoban\sokoban.cpp(162,72): warning C4244: '=': conversion from '__int64' to 'int', possible loss of data
   sokoban.vcxproj -> C:\Users\Paris\Documents\sokoban-game\x64\Debug\sokoban.exe
